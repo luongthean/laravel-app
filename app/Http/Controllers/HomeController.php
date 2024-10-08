@@ -10,7 +10,9 @@ class HomeController extends Controller
 {
     public function home()
     {
-        return view('welcome');
+        $images = Image::get();
+
+        return view('welcome', compact('images'));
     }
 
     public function upload(Request $request)
