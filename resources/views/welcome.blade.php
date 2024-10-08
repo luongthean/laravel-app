@@ -80,7 +80,7 @@
 
                             <h2 class="mb-2 mt-2">List Image</h2>
                             @foreach($images as $image)
-                            <a href="{{$image->url}}">{{$image->url}}</a>
+                            <a class="d-flex" href="{{$image->url}}">{{$image->url}}</a>
                             @endforeach
                         </div>
                     </main>
