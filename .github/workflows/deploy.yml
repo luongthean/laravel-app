@@ -1,0 +1,52 @@
+name: Deploy Laravel to EC2
+
+on:
+  push:
+    branches:
+      - master 
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, curl, zip, gd
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Run Laravel migrations
+        run: php artisan migrate --force
+
+      - name: Archive project files
+        run: |
+          zip -r laravel-project.zip . -x "*.git*"
+
+      - name: Upload to S3
+        uses: jakejarvis/s3-sync-action@v0.5.0
+        with:
+          args: --acl public-read --follow-symlinks
+        env:
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }} 
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }} 
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }} 
+          SOURCE_DIR: './laravel-project.zip'
+          DEST_DIR: 'laravel-project.zip'
+
+      - name: Deploy to EC2
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }} 
+          EC2_HOST: ${{ secrets.EC2_HOST }} 
+          EC2_USER: ${{ secrets.EC2_USER }} 
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST 'bash -s' < ./deploy.sh
