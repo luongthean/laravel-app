@@ -50,3 +50,4 @@ jobs:
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST 'bash -s' < ./deploy.sh
+          cd /var/www/html && git pull && composer install - no-dev && php artisan migrate - force && php artisan optimize
