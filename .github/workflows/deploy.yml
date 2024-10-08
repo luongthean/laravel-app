@@ -13,14 +13,6 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
-      - name: Install Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zip unzip
-          composer install --no-dev --prefer-dist --optimize-autoloader
-          cp .env.example .env
-          php artisan key:generate
-
       - name: Add EC2 Host to Known Hosts
         run: |
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
@@ -45,6 +37,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no -i /tmp/private_key.pem ${SSH_USER}@${SSH_HOST} << 'EOF'
             cd ${DESTINATION_PATH}
+            sudo git pull origin master
             composer install --no-dev --prefer-dist --optimize-autoloader
             php artisan migrate --force
             php artisan config:cache
