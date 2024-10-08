@@ -77,6 +77,11 @@
                                 </div>
                                 <button type="submit" class="btn btn-primary" style="color: #000;">Upload</button>
                             </form>
+
+                            <h2 class="mb-2 mt-2">List Image</h2>
+                            @foreach($images as $image)
+                            <a href="{{$image->url}}">{{$image->url}}</a>
+                            @endforeach
                         </div>
                     </main>
 
