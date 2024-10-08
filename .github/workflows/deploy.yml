@@ -10,35 +10,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Sync Files to EC2
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          SSH_HOST: ${{ secrets.EC2_HOST }}
-          SSH_USER: ${{ secrets.EC2_USER }}
-          DESTINATION_PATH: ${{ secrets.AWS_PATH }}
-        run: |
-          echo "${SSH_PRIVATE_KEY}" > /tmp/private_key.pem
-          chmod 600 /tmp/private_key.pem
-          rsync -avz -e "ssh -i /tmp/private_key.pem" --exclude=".git" --exclude="vendor" --exclude="node_modules" ./ ${SSH_USER}@${SSH_HOST}:${DESTINATION_PATH}
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.5.3
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
 
-      - name: SSH into EC2 and Set Permissions
+      - name: Deploy to Server
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
-          SSH_HOST: ${{ secrets.EC2_HOST }}
           SSH_USER: ${{ secrets.EC2_USER }}
-          DESTINATION_PATH: ${{ secrets.AWS_PATH }}
+          SSH_HOST: ${{ secrets.EC2_HOST }}
         run: |
-          ssh -o StrictHostKeyChecking=no -i /tmp/private_key.pem ${SSH_USER}@${SSH_HOST} << 'EOF'
-            cd ${DESTINATION_PATH}
+          ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST << 'EOF'
+            cd /var/www/laravel-app/
             sudo git pull origin master
             composer install --no-dev --prefer-dist --optimize-autoloader
             php artisan migrate --force
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
-            sudo chown -R www-data:www-data ${DESTINATION_PATH}
-            sudo systemctl restart apache2  # Restart web server
+            sudo chown -R www-data:www-data /var/www/laravel-app/
           EOF
