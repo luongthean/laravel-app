@@ -52,4 +52,4 @@ jobs:
             php artisan view:cache
             sudo chown -R www-data:www-data ${DESTINATION_PATH}
             sudo systemctl restart apache2  # Restart web server
-EOF
+          EOF
